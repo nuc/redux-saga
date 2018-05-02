@@ -48,7 +48,11 @@ const ErrorGenerator = ({ action }) =>
         </button>
         {' '}
         <button onClick={() => action('ACTION_FUNCTION_EXPRESSION_ERROR')}>
-          Action error in saga as function expression 
+          Action error in saga as function expression
+        </button>
+        {' '}
+        <button onClick={() => action('ACTION_ERROR_RETRY')}>
+          Action error but retry for 3 times
         </button>
       </p>
 

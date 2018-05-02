@@ -23,4 +23,5 @@ export {
   takeLeading,
   throttle,
   delay,
+  retry,
 } from './internal/io'

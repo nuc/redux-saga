@@ -1,6 +1,6 @@
 /* eslint-disable no-constant-condition, no-undef, no-console, no-unused-vars */
 
-import { call, put, takeEvery, delay, all, race, fork, spawn, take, select } from 'redux-saga/effects'
+import { call, put, takeEvery, delay, all, race, fork, spawn, take, select, retry } from 'redux-saga/effects'
 import { errorGeneratorSelector } from '../reducers/'
 
 function* errorInPutSaga() {
@@ -71,6 +71,14 @@ function* errorInDelegateSaga() {
   yield* delegatedSaga()
 }
 
+function* retryErrorSaga() {
+  try {
+    yield retry(3, 100, throwAnErrorSaga)
+  } catch (error) {
+    console.log("Caught")
+  }
+}
+
 const funcExpressionSaga = function* functionExpressionSaga(){
   yield call(throwAnErrorSaga)
 }
@@ -94,5 +102,6 @@ export default function* rootSaga() {
     }),
     takeEvery('ACTION_IN_DELEGATE_ERROR', errorInDelegateSaga),
     takeEvery('ACTION_FUNCTION_EXPRESSION_ERROR', funcExpressionSaga),
+    takeEvery('ACTION_ERROR_RETRY', retryErrorSaga),
   ])
 }

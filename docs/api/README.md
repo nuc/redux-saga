@@ -11,6 +11,7 @@
   * [`takeLeading(pattern, saga, ..args)`](#takeleadingpattern-saga-args)
   * [`takeLeading(channel, saga, ..args)`](#takeleadingchannel-saga-args)
   * [`throttle(ms, pattern, saga, ..args)`](#throttlems-pattern-saga-args)
+  * [`retry(maxTries, ms, saga, ..args)`](#retrymaxtries-ms-saga-args)
 * [`Effect creators`](#effect-creators)
   * [`take(pattern)`](#takepattern)
   * [`take.maybe(pattern)`](#takemaybepattern)
@@ -322,6 +323,54 @@ Spawns a `saga` on an action dispatched to the Store that matches `pattern`. Aft
 - `ms: Number` - length of a time window in milliseconds during which actions will be ignored after the action starts processing
 
 - `pattern: String | Array | Function` - for more information see docs for [`take(pattern)`](#takepattern)
+
+- `saga: Function` - a Generator function
+
+- `args: Array<any>` - arguments to be passed to the started task. `throttle` will add the
+incoming action to the argument list (i.e. the action will be the last argument provided to `saga`)
+
+#### Example
+
+In the following example, we create a simple task `fetchAutocomplete`. We use `throttle` to
+start a new `fetchAutocomplete` task on dispatched `FETCH_AUTOCOMPLETE` action. However since `throttle` ignores consecutive `FETCH_AUTOCOMPLETE` for some time, we ensure that user won't flood our server with requests.
+
+```javascript
+import { call, put, throttle } from `redux-saga/effects`
+
+function* fetchAutocomplete(action) {
+  const autocompleteProposals = yield call(Api.fetchAutocomplete, action.text)
+  yield put({type: 'FETCHED_AUTOCOMPLETE_PROPOSALS', proposals: autocompleteProposals})
+}
+
+function* throttleAutocomplete() {
+  yield throttle(1000, 'FETCH_AUTOCOMPLETE', fetchAutocomplete)
+}
+```
+
+#### Notes
+
+`throttle` is a high-level API built using `take`, `fork` and `actionChannel`. Here is how the helper could be implemented using the low-level Effects
+
+```javascript
+const throttle = (ms, pattern, task, ...args) => fork(function*() {
+  const throttleChannel = yield actionChannel(pattern)
+
+  while (true) {
+    const action = yield take(throttleChannel)
+    yield fork(task, ...args, action)
+    yield delay(ms)
+  }
+})
+
+```
+
+### `retry(maxTries, ms, saga, ...args)`
+
+Retries a `saga` the defined amount of times.
+
+- `maxTries: Number` - the amount of times the saga should retry, before failing
+
+- `ms: Number` - length of a time window in milliseconds in between the retries
 
 - `saga: Function` - a Generator function
 
@@ -1290,6 +1339,7 @@ For testing purposes only.
 | takeLatest           | No                                                          |
 | takeLeading          | No                                                          |
 | throttle             | No                                                          |
+| retry                | No                                                          |
 | take                 | Yes                                                         |
 | take(channel)        | Sometimes (see API reference)                               |
 | take.maybe           | Yes                                                         |

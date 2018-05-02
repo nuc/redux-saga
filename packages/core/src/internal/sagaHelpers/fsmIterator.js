@@ -27,17 +27,15 @@ export default function fsmIterator(fsm, q0, name) {
     if (qNext === qEnd) {
       return done
     }
-
     if (error) {
       qNext = qEnd
       throw error
-    } else {
-      updateState && updateState(arg)
-      let [q, output, _updateState] = fsm[qNext]()
-      qNext = q
-      updateState = _updateState
-      return qNext === qEnd ? done : output
     }
+    updateState && updateState(arg)
+    let [q, output, _updateState] = fsm[qNext]()
+    qNext = q
+    updateState = _updateState
+    return qNext === qEnd ? done : output
   }
 
   return makeIterator(next, error => next(null, error), name)

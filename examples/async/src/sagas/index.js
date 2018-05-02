@@ -1,6 +1,6 @@
 /* eslint-disable no-constant-condition */
 
-import { take, put, call, fork, select } from 'redux-saga/effects'
+import { take, put, call, fork, select, retry } from 'redux-saga/effects'
 import fetch from 'isomorphic-fetch'
 import * as actions from '../actions'
 import { selectedRedditSelector, postsByRedditSelector } from '../reducers/selectors'
@@ -12,6 +12,8 @@ export function fetchPostsApi(reddit) {
 }
 
 export function* fetchPosts(reddit) {
+  console.log('fetching posts')
+  yield Promise.reject()
   yield put(actions.requestPosts(reddit))
   const posts = yield call(fetchPostsApi, reddit)
   yield put(actions.receivePosts(reddit, posts))
@@ -40,8 +42,18 @@ export function* startup() {
   yield fork(fetchPosts, selectedReddit)
 }
 
+export function* retrySaga() {
+  const selectedReddit = yield select(selectedRedditSelector)
+  try {
+    yield retry(3, 1000, fetchPosts, selectedReddit)
+  } catch(error) {
+    debugger
+  }
+}
+
 export default function* root() {
-  yield fork(startup)
+  // yield fork(startup)
   yield fork(nextRedditChange)
   yield fork(invalidateReddit)
+  yield fork(retrySaga)
 }
